@@ -1,1 +1,16 @@
 Generic single-database configuration.
+
+alembic current
+
+alembic revision --autogenerate -m "descrição da migração"
+alembic upgrade head
+alembic downgrade -1
+alembic history
+
+
+Se você quiser apenas visualizar as diferenças entre o modelo e o banco de dados sem gerar uma migração:
+alembic revision --autogenerate --sql
+
+Outras Opções Úteis
+alembic downgrade base: Reverte todas as migrações até a migração inicial (ou base).
+alembic stamp head: Marca o banco de dados como atualizado na revisão mais recente sem aplicar as migrações (caso você queira sincronizar sem rodar migrações).

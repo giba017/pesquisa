@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Questionário</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
+    <h1 class="text-3xl font-bold mb-6 text-center">Cadastro de Questionário</h1>
+    <form action="/submit" method="post" class="space-y-6">
+      <div>
+        <label for="titulo" class="block text-sm font-medium text-gray-700">Título do Questionário</label>
+        <input id="titulo" name="titulo" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+      </div>
+      <div>
+        <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite uma breve descrição do questionário"></textarea>
+      </div>
+      <div class="space-y-4">
+        <label class="block text-sm font-medium text-gray-700">Perguntas</label>
+        <div id="perguntas">
+          <div class="flex items-center space-x-2 pergunta-item">
+            <input type="text" name="perguntas" placeholder="Pergunta 1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+            <select name="tipos" class="border rounded p-2">
+              <option value="texto">Texto</option>
+              <option value="multipla_escolha">Múltipla Escolha</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" id="adicionarPergunta" class="mt-2 text-blue-500">Adicionar Pergunta</button>
+      </div>
+      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded-md">Cadastrar Questionário</button>
+    </form>
+  </div>
+
+  <script>
+    const perguntasContainer = document.getElementById('perguntas');
+    const adicionarPerguntaBtn = document.getElementById('adicionarPergunta');
+    let perguntaCount = 1;
+
+    adicionarPerguntaBtn.addEventListener('click', () => {
+      perguntaCount++;
+      const perguntaDiv = document.createElement('div');
+      perguntaDiv.classList.add('flex', 'items-center', 'space-x-2', 'pergunta-item');
+      perguntaDiv.innerHTML = `
+        <input type="text" name="perguntas" placeholder="Pergunta ${perguntaCount}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+        <select name="tipos" class="border rounded p-2">
+          <option value="texto">Texto</option>
+          <option value="multipla_escolha">Múltipla Escolha</option>
+        </select>
+      `;
+      perguntasContainer.appendChild(perguntaDiv);
+    });
+  </script>
+</body>
+</html>

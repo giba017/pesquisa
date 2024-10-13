@@ -1,15 +1,16 @@
-from datetime import datetime
-from enum import Enum
 import enum
+from datetime import datetime
 from io import BytesIO
 
 import pyotp
 import qrcode
 from sqlalchemy import (
     BigInteger,
+    Enum,
     ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     event,
     func,
@@ -40,7 +41,7 @@ class Base:
         return {'message': f'<{row}> deleted'}
 
 
-class TodoState(str, Enum):
+class TodoState(str, enum.Enum):
     draft = 'draft'
     todo = 'todo'
     doing = 'doing'
@@ -350,8 +351,9 @@ class Todo(Base):
     user: Mapped[User] = relationship(init=False, back_populates='todos')
 
 
-################################################################################
-# #################  PESQUISA  ##########################################
+###############################################################################
+# ########################  PESQUISA  #########################################
+###############################################################################
 
 # Enum para definir o tipo de questão
 class TipoQuestao(enum.Enum):
@@ -359,7 +361,9 @@ class TipoQuestao(enum.Enum):
     SELECT_SINGLE = "select_single"  # Selecionar um item
     SELECT_MULTIPLE = "select_multiple"  # Selecionar múltiplos itens
 
+
 # Modelo de Questionário
+@table_registry.mapped_as_dataclass
 class Questionario(Base):
     __tablename__ = 'questionarios'
 
@@ -367,9 +371,12 @@ class Questionario(Base):
     titulo: Mapped[str] = mapped_column(String, nullable=False)
 
     # Relacionamento com Questao
-    questoes: Mapped[list["Questao"]] = relationship("Questao", back_populates="questionario")
+    questoes: Mapped[list["Questao"]] = relationship(
+        "Questao", back_populates="questionario")
+
 
 # Modelo de Questão
+@table_registry.mapped_as_dataclass
 class Questao(Base):
     __tablename__ = 'questoes'
 
@@ -377,16 +384,24 @@ class Questao(Base):
     texto: Mapped[str] = mapped_column(String, nullable=False)
 
     # Tipo da questão: texto, seleção única, seleção múltipla
-    tipo: Mapped[TipoQuestao] = mapped_column(Enum(TipoQuestao), nullable=False)
+    tipo: Mapped[TipoQuestao] = mapped_column(
+        Enum(TipoQuestao), nullable=False)
 
     # Relacionamento com Questionário
     questionario_id: Mapped[int] = mapped_column(ForeignKey('questionarios.id'))
-    questionario: Mapped["Questionario"] = relationship("Questionario", back_populates="questoes")
+    questionario: Mapped["Questionario"] = relationship(
+        "Questionario", back_populates="questoes")
 
     # Relacionamento com Opções (somente para questões tipo SELECT)
-    opcoes: Mapped[list["Opcao"]] = relationship("Opcao", back_populates="questao")
+    opcoes: Mapped[list["Opcao"]] = relationship(
+        "Opcao", back_populates="questao")
+    # Novo campo para definir o limite de respostas permitidas
+    limite_respostas: Mapped[int | None] = mapped_column(
+        Integer, nullable=True)  # Limite para questões SELECT_MULTIPLE
+
 
 # Modelo de Opção para as questões do tipo SELECT
+@table_registry.mapped_as_dataclass
 class Opcao(Base):
     __tablename__ = 'opcoes'
 
@@ -395,5 +410,50 @@ class Opcao(Base):
 
     # Relacionamento com Questão
     questao_id: Mapped[int] = mapped_column(ForeignKey('questoes.id'))
-    questao: Mapped["Questao"] = relationship("Questao", back_populates="opcoes")
-    
+    questao: Mapped["Questao"] = relationship(
+        "Questao", back_populates="opcoes")
+
+
+# Modelo de Resposta do Questionário
+@table_registry.mapped_as_dataclass
+class RespostaQuestionario(Base):
+    __tablename__ = 'respostas_questionario'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    nome: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+
+    # Relacionamento com o Questionário que foi respondido
+    questionario_id: Mapped[int] = mapped_column(
+        ForeignKey('questionarios.id'))
+    questionario: Mapped["Questionario"] = relationship("Questionario")
+
+    # Relacionamento com as respostas individuais das questões
+    respostas_questoes: Mapped[list["RespostaQuestao"]] = relationship(
+        "RespostaQuestao", back_populates="resposta_questionario")
+
+
+# Modelo de Resposta de Questão Individual
+@table_registry.mapped_as_dataclass
+class RespostaQuestao(Base):
+    __tablename__ = 'respostas_questao'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # Relacionamento com a Resposta do Questionário (quem respondeu)
+    resposta_questionario_id: Mapped[int] = mapped_column(
+        ForeignKey('respostas_questionario.id'))
+    resposta_questionario: Mapped["RespostaQuestionario"] = relationship(
+        "RespostaQuestionario", back_populates="respostas_questoes")
+
+    # Relacionamento com a Questão respondida
+    questao_id: Mapped[int] = mapped_column(ForeignKey('questoes.id'))
+    questao: Mapped["Questao"] = relationship("Questao")
+
+    # Resposta em texto (para questões de input de texto)
+    resposta_texto: Mapped[str | None] = mapped_column(Text)
+
+    # Para questões do tipo SELECT, armazenamos a opção escolhida
+    opcao_id: Mapped[int | None] = mapped_column(
+        ForeignKey('opcoes.id'), nullable=True)
+    opcao: Mapped["Opcao"] = relationship("Opcao")
