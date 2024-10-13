@@ -9,6 +9,18 @@ readme = "README.md"
 python = "^3.12"
 fastapi = {extras = ["standard"], version = "^0.115.2"}
 ignr = "^2.2"
+uvicorn = {extras = ["standard"], version = "^0.31.1"}
+jinja2 = "^3.1.4"
+sqlalchemy = "^2.0.35"
+click = "^8.1.7"
+pytz = "^2024.2"
+alembic = "^1.13.3"
+pydantic-settings = "^2.5.2"
+jwt = "^1.3.1"
+pwdlib = "^0.2.1"
+pyotp = "^2.9.0"
+qrcode = "^8.0"
+psycopg = {extras = ["binary"], version = "^3.2.3"}
 
 
 [tool.poetry.group.dev.dependencies]
