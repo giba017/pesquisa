@@ -1,11 +1,12 @@
+from ast import Dict
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Path, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from pesquisa.app import templates
 from pesquisa.database import get_session
 from pesquisa.models import (
     Opcao,
@@ -16,13 +17,17 @@ from pesquisa.models import (
     TipoQuestao,
     User,
 )
+from pesquisa.schemas import QuestionarioSchema
 from pesquisa.security import get_current_active_user
+
+templates = Jinja2Templates(directory='pesquisa/templates')
 
 router = APIRouter(prefix='/pesquisa', tags=['pesquisa'])
 T_Session = Annotated[Session, Depends(get_session)]
 T_CurrentUser = Annotated[User, Depends(get_current_active_user)]
 
-@router.get("/questionarios", response_class=HTMLResponse)
+
+@router.get("/questionarios/", response_class=HTMLResponse)
 async def form_get_questionario(request: Request):
     return templates.TemplateResponse(
         "formQuestionario.html", {"request": request}
@@ -30,9 +35,39 @@ async def form_get_questionario(request: Request):
 
 
 @router.post("/questionarios/")
-def criar_questionario(titulo: str, session: T_Session):
-    questionario = Questionario(titulo=titulo)
+def criar_questionario(  # noqa: PLR0913, PLR0917
+    session: T_Session,
+    titulo: str = Form(...),
+    descricao: str = Form(...),
+    perguntas: List[str] = Form(...),
+    tipos: List[str] = Form(...),
+    opcoes: List[Optional[str]] = Form(...),
+    limite_respostas: List[Optional[int]] | None = None,
+):
+    questionario = Questionario(
+        titulo=titulo,
+        descricao=descricao
+    )
+    session.refresh(questionario)
     session.add(questionario)
+    for index, valor in enumerate(tipos):
+        questao = None
+        if valor == 'texto':
+            questao = Questao(
+                texto=perguntas[index],
+                tipo=TipoQuestao.TEXT,
+                questionario_id=questionario.id,
+            )
+        elif valor == 'select_single':
+            questao = Questao(
+                texto=perguntas[index],
+                tipo=TipoQuestao.TEXT,
+                questionario_id=questionario.id,
+            )
+            Opcao()
+        session.add(questao)
+        session.refresh(questao)
+
     session.commit()
     session.refresh(questionario)
     return questionario

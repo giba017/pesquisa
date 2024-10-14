@@ -1,8 +1,11 @@
 from datetime import datetime
+from typing import List, Literal, Optional
 
-from app.models.models import TodoState
-from app.schemas.permissioes_schema import RolePublic
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from pesquisa.models import TodoState
+
+# from pesquisa.permissioes_schema import RolePublic
 
 
 class Message(BaseModel):
@@ -69,7 +72,7 @@ class UserRolesIn(BaseModel):
 
 class UserRolesOut(UserRolesIn):
     id: int
-    role: RolePublic
+#    role: RolePublic
 
 
 class UserRolesList(BaseModel):
@@ -107,3 +110,41 @@ class TodoUpdate(BaseModel):
     title: str | None = None
     description: str | None = None
     state: TodoState | None = None
+
+
+###############################################
+#  ########### pesquisa ######################
+
+class OpcaoSchema(BaseModel):
+    texto: str = Field(..., title="Texto da Opção",
+                       description="Texto da opção de resposta")
+
+
+class PerguntaSchema(BaseModel):
+    texto: str = Field(..., title="Texto da Pergunta",
+                       description="Texto da pergunta")
+    tipo: str = Field(
+        ..., title="Tipo da Pergunta",
+        description="Tipo da pergunta ('texto', 'select_single', 'select_multiple')",  # noqa: E501
+        pattern="^(texto|select_single|select_multiple)$"
+    )
+    opcoes: List[OpcaoSchema] = Field(default_factory=list,
+                                title="Opções",
+                                description="Lista de opções\
+                                     para perguntas de múltipla escolha")
+    limite_respostas: Optional[int] = Field(
+        None, title="Limite de Respostas",
+        description="Limite opcional de respostas para a pergunta"
+    )
+
+
+class QuestionarioSchema(BaseModel):
+    titulo: str = Field(...,
+                        title="Título do Questionário",
+                        description="Título do questionário")
+    descricao: Optional[str] = Field(None, title="Descrição",
+                                     description="Descrição do questionário")
+    perguntas: List[PerguntaSchema] = Field(
+        ..., title="Perguntas",
+        description="Lista de perguntas no questionário"
+    )

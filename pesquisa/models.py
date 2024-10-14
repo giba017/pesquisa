@@ -367,8 +367,9 @@ class TipoQuestao(enum.Enum):
 class Questionario(Base):
     __tablename__ = 'questionarios'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
     titulo: Mapped[str] = mapped_column(String, nullable=False)
+    descricao: Mapped[str] = mapped_column(String, nullable=True)
 
     # Relacionamento com Questao
     questoes: Mapped[list["Questao"]] = relationship(
@@ -380,7 +381,7 @@ class Questionario(Base):
 class Questao(Base):
     __tablename__ = 'questoes'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
     texto: Mapped[str] = mapped_column(String, nullable=False)
 
     # Tipo da questão: texto, seleção única, seleção múltipla
@@ -405,7 +406,7 @@ class Questao(Base):
 class Opcao(Base):
     __tablename__ = 'opcoes'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
     texto: Mapped[str] = mapped_column(String, nullable=False)
 
     # Relacionamento com Questão
@@ -419,7 +420,7 @@ class Opcao(Base):
 class RespostaQuestionario(Base):
     __tablename__ = 'respostas_questionario'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
     nome: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -438,7 +439,7 @@ class RespostaQuestionario(Base):
 class RespostaQuestao(Base):
     __tablename__ = 'respostas_questao'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
 
     # Relacionamento com a Resposta do Questionário (quem respondeu)
     resposta_questionario_id: Mapped[int] = mapped_column(
