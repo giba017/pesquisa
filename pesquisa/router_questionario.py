@@ -46,10 +46,12 @@ def criar_questionario(  # noqa: PLR0913, PLR0917
 ):
     questionario = Questionario(
         titulo=titulo,
-        descricao=descricao
+        descricao=descricao,
+        questoes=[]
     )
-    session.refresh(questionario)
     session.add(questionario)
+    session.flush()
+    session.refresh(questionario)
     for index, valor in enumerate(tipos):
         questao = None
         if valor == 'texto':
@@ -57,16 +59,32 @@ def criar_questionario(  # noqa: PLR0913, PLR0917
                 texto=perguntas[index],
                 tipo=TipoQuestao.TEXT,
                 questionario_id=questionario.id,
+                limite_respostas=None,
+                opcoes=None
             )
+            session.add(questao)
+            session.flush()
+            session.refresh(questao)
         elif valor == 'select_single':
             questao = Questao(
                 texto=perguntas[index],
                 tipo=TipoQuestao.TEXT,
                 questionario_id=questionario.id,
+                limite_respostas=(int(limite_respostas) if limite_respostas else None),  # type: ignore E501
+                opcoes=None
             )
-            Opcao()
-        session.add(questao)
-        session.refresh(questao)
+
+            for i, v in enumerate(opcoes[index:]):
+                if not opcoes[i]:
+                    break
+                db_opcoes = Opcao(
+                    texto=str(opcoes[i]),
+                    questao_id=questao.id,
+                    questao=questao
+                )
+                session.add(db_opcoes)
+                session.flush()
+                session.refresh(db_opcoes)
 
     session.commit()
     session.refresh(questionario)

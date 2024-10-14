@@ -367,7 +367,8 @@ class TipoQuestao(enum.Enum):
 class Questionario(Base):
     __tablename__ = 'questionarios'
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, index=True, autoincrement=True)
     titulo: Mapped[str] = mapped_column(String, nullable=False)
     descricao: Mapped[str] = mapped_column(String, nullable=True)
 
@@ -381,7 +382,8 @@ class Questionario(Base):
 class Questao(Base):
     __tablename__ = 'questoes'
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, index=True, autoincrement=True)
     texto: Mapped[str] = mapped_column(String, nullable=False)
 
     # Tipo da questão: texto, seleção única, seleção múltipla
@@ -389,16 +391,17 @@ class Questao(Base):
         Enum(TipoQuestao), nullable=False)
 
     # Relacionamento com Questionário
-    questionario_id: Mapped[int] = mapped_column(ForeignKey('questionarios.id'))
-    questionario: Mapped["Questionario"] = relationship(
-        "Questionario", back_populates="questoes")
+    questionario_id: Mapped[int] = mapped_column(
+        ForeignKey('questionarios.id'))
 
     # Relacionamento com Opções (somente para questões tipo SELECT)
-    opcoes: Mapped[list["Opcao"]] = relationship(
+    opcoes: Mapped[list["Opcao"] | None] = relationship(
         "Opcao", back_populates="questao")
     # Novo campo para definir o limite de respostas permitidas
     limite_respostas: Mapped[int | None] = mapped_column(
         Integer, nullable=True)  # Limite para questões SELECT_MULTIPLE
+    questionario = relationship(
+        "Questionario", back_populates="questoes")  # type: ignore
 
 
 # Modelo de Opção para as questões do tipo SELECT
@@ -406,7 +409,8 @@ class Questao(Base):
 class Opcao(Base):
     __tablename__ = 'opcoes'
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, index=True, autoincrement=True)
     texto: Mapped[str] = mapped_column(String, nullable=False)
 
     # Relacionamento com Questão
@@ -420,7 +424,8 @@ class Opcao(Base):
 class RespostaQuestionario(Base):
     __tablename__ = 'respostas_questionario'
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, index=True, autoincrement=True)
     nome: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -439,7 +444,8 @@ class RespostaQuestionario(Base):
 class RespostaQuestao(Base):
     __tablename__ = 'respostas_questao'
 
-    id: Mapped[int] = mapped_column(init=False, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(
+        init=False, primary_key=True, index=True, autoincrement=True)
 
     # Relacionamento com a Resposta do Questionário (quem respondeu)
     resposta_questionario_id: Mapped[int] = mapped_column(
