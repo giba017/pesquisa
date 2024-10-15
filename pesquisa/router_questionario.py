@@ -73,10 +73,9 @@ def criar_questionario(  # noqa: PLR0913, PLR0917
                 )
                 session.add(questao)
             elif valor == 'select_single':
-                questao_tipo = TipoQuestao.SELECT_SINGLE if valor == 'select_single' else TipoQuestao.SELECT_MULTIPLE  # noqa: E501
                 questao = Questao(
                     texto=perguntas[index],
-                    tipo=questao_tipo.value,  # type: ignore
+                    tipo=TipoQuestao.SELECT_SINGLE,  # type: ignore
                     questionario_id=questionario.id,
                     limite_respostas=(limite_respostas[index] if limite_respostas and limite_respostas[index] else None),  # noqa: E501
                     opcoes=[]
@@ -96,10 +95,9 @@ def criar_questionario(  # noqa: PLR0913, PLR0917
                     )
                     session.add(db_opcao)
             else:
-                questao_tipo = TipoQuestao.SELECT_SINGLE if valor == 'select_single' else TipoQuestao.SELECT_MULTIPLE  # noqa: E501
                 questao = Questao(
                     texto=perguntas[index],
-                    tipo=questao_tipo.value,  # type: ignore
+                    tipo=TipoQuestao.SELECT_MULTIPLE,  # type: ignore
                     questionario_id=questionario.id,
                     limite_respostas=(limite_respostas[index] if limite_respostas and limite_respostas[index] else None),  # noqa: E501
                     opcoes=[]
