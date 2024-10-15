@@ -44,51 +44,100 @@ def criar_questionario(  # noqa: PLR0913, PLR0917
     opcoes: List[Optional[str]] = Form(...),
     limite_respostas: List[Optional[int]] | None = None,
 ):
-    questionario = Questionario(
-        titulo=titulo,
-        descricao=descricao,
-        questoes=[]
-    )
-    session.add(questionario)
-    session.flush()
-    session.refresh(questionario)
-    for index, valor in enumerate(tipos):
-        questao = None
-        if valor == 'texto':
-            questao = Questao(
-                texto=perguntas[index],
-                tipo=TipoQuestao.TEXT,
-                questionario_id=questionario.id,
-                limite_respostas=None,
-                opcoes=None
-            )
-            session.add(questao)
-            session.flush()
-            session.refresh(questao)
-        elif valor == 'select_single':
-            questao = Questao(
-                texto=perguntas[index],
-                tipo=TipoQuestao.TEXT,
-                questionario_id=questionario.id,
-                limite_respostas=(int(limite_respostas) if limite_respostas else None),  # type: ignore E501
-                opcoes=None
-            )
+    questionario = None
+    try:
+        session.begin()
+        # Cria o questionário
+        questionario = Questionario(
+            titulo=titulo,
+            descricao=descricao,
+            questoes=[]
+        )
 
-            for i, v in enumerate(opcoes[index:]):
-                if not opcoes[i]:
-                    break
-                db_opcoes = Opcao(
-                    texto=str(opcoes[i]),
-                    questao_id=questao.id,
-                    questao=questao
+        # Adiciona o questionário na sessão
+        session.add(questionario)
+
+        # "Flush" para garantir que questionario.id esteja disponível
+        session.flush()
+
+        # Agora podemos usar o `questionario.id` para criar as questões
+        for index, valor in enumerate(tipos):
+            questao = None
+            if valor == 'texto':
+                questao = Questao(
+                    texto=perguntas[index],
+                    tipo=TipoQuestao.TEXT,
+                    questionario_id=questionario.id,  # `questionario.id` já está disponível  # noqa: E501
+                    limite_respostas=None,
+                    opcoes=[]
                 )
-                session.add(db_opcoes)
-                session.flush()
-                session.refresh(db_opcoes)
+                session.add(questao)
+            elif valor == 'select_single':
+                questao_tipo = TipoQuestao.SELECT_SINGLE if valor == 'select_single' else TipoQuestao.SELECT_MULTIPLE  # noqa: E501
+                questao = Questao(
+                    texto=perguntas[index],
+                    tipo=questao_tipo.value,  # type: ignore
+                    questionario_id=questionario.id,
+                    limite_respostas=(limite_respostas[index] if limite_respostas and limite_respostas[index] else None),  # noqa: E501
+                    opcoes=[]
+                )
+                session.add(questao)
+                session.flush()  # Faz "flush" para garantir que `questao.id`
+                # esteja disponível
 
-    session.commit()
-    session.refresh(questionario)
-    return questionario
+                # Adiciona as opções
+                for i, v in enumerate(opcoes[index:]):
+                    if not opcoes[i]:
+                        break
+                    db_opcao = Opcao(
+                        texto=str(opcoes[i]),
+                        questao_id=questao.id,
+                        questao=questao,
+                    )
+                    session.add(db_opcao)
+            else:
+                questao_tipo = TipoQuestao.SELECT_SINGLE if valor == 'select_single' else TipoQuestao.SELECT_MULTIPLE  # noqa: E501
+                questao = Questao(
+                    texto=perguntas[index],
+                    tipo=questao_tipo.value,  # type: ignore
+                    questionario_id=questionario.id,
+                    limite_respostas=(limite_respostas[index] if limite_respostas and limite_respostas[index] else None),  # noqa: E501
+                    opcoes=[]
+                )
+                session.add(questao)
+                session.flush()  # Faz "flush" para garantir que `questao.id`
+                # esteja disponível
+
+                # Adiciona as opções
+                for i, v in enumerate(opcoes[index:]):
+                    if not opcoes[i]:
+                        break
+                    db_opcao = Opcao(
+                        texto=str(opcoes[i]),
+                        questao_id=questao.id,
+                        questao=questao,
+                    )
+                    session.add(db_opcao)
+
+        # Commita a transação para salvar no banco de dados
+        session.commit()
+
+        # Retorna o questionário com os dados salvos
+        session.refresh(questionario)
+        return questionario
+    except Exception as e:
+        # Em caso de erro, faz o rollback da transação
+        if questionario:
+            session.delete(questionario)
+            session.flush()
+            session.commit()
+        session.rollback()
+        # Lança a exceção novamente para que o FastAPI\
+        #  possa capturá-la e retornar a resposta adequada
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao criar questionário: {str(e)}"
+        )
 
 
 # Endpoint para adicionar uma questão a um questionário
